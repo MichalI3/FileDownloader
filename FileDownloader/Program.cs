@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Net;
 using System.Threading;
 
 namespace FileDownloader
@@ -9,26 +10,17 @@ namespace FileDownloader
         static void Main(string[] args)
         {
 
-
-            FileDownloader fd = new FileDownloader();
-            fd.DownloadFile("https://drive.google.com/uc?export=download&id=1TaF4TdHgPdHtyciBDCmhz_x_MO6hP8J8","1.txt");
-
-            while (!fd.DownloadCompleted)
-            Thread.Sleep(1000);
-
-
-            return;
             Console.WriteLine("Wrowadź adressy URL odzielone średnikiem (;) :");
             List<NetAdress> l = new List<NetAdress>(); // Adress list
             string input = Console.ReadLine();
 
 
-            DirectionAdress Dr = new DirectionAdress();
+            DirectoryAdress Dr = new DirectoryAdress();
             Console.WriteLine("Wprowadź adress zapisu dla pobranych plików:");
             Dr.Adress = Console.ReadLine();
             if (!Dr.IsValid)
             {
-                Console.WriteLine("Directory location is not valid: " + Dr.Adress);
+                Console.WriteLine("Sciezka zapisu nie poprawna: " + Dr.Adress);
                 return;
             }
 
@@ -43,23 +35,40 @@ namespace FileDownloader
                 }
             }
 
+            //start downloading files 
+            DownloadMenager dm = new DownloadMenager();
+
+            // List<FileDownloader> FL = new List<FileDownloader>();
             for (int i = 0; i < l.Count; i++)
             {
-                Console.WriteLine(l[i].Adress + " --is it valid adress " + l[i].IsValid + "  can you connect: " + l[i].IsInNetwork());
                 if (l[i].IsInNetwork())
                 {
-                    //FileDownloader fd = new FileDownloader();
-                   // var success = fd.DownloadFile(l[i].Adress, Dr.Adress, 1500);
-
-                   // Console.WriteLine("Done  - success: " + success);
+                    string fileadress = Dr.Adress + l[i].FileName;
+                    dm.AddTodownloadList(l[i].Adress, fileadress);
                     l.RemoveAt(i);
                 }
-
             }
 
-            Console.WriteLine("Invalid or unreachable URL adresses:");
-            foreach (var s in l)
-                Console.WriteLine(s.Adress);
+            //
+            dm.WaitForAsync();
+
+
+            Console.WriteLine("Nieprawidłowe adressy URL");
+            for (int i = 0; i < l.Count; i++)
+                if (!l[i].Error404)
+                {
+                    Console.WriteLine(l[i].Adress);
+                    l.RemoveAt(i);
+                }
+            if (l.Count > 0) { 
+            string check;
+            Console.WriteLine("Czy spróbować pobrać zasoby jeszcze raz? t/n");
+            check = Console.ReadLine();
+                if (check == "t")
+                {
+                    foreach (var s in l) ;
+                }
+            }        
         }
     }
 }
