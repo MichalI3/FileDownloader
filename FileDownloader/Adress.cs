@@ -1,6 +1,6 @@
 ﻿namespace FileDownloader
 {
-    abstract class _Adress
+    public abstract class _Adress
     {
         private string adress;
         private bool isvalid = false;
@@ -24,7 +24,7 @@
         /// 
         /// Checks if adress is in accordance to URL regex.
         /// 
-        protected abstract bool IsAdressValid(string uriName);
+        public abstract bool IsAdressValid(string uriName);
 
     }
 }

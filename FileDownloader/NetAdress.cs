@@ -1,18 +1,27 @@
 ﻿using System;
 using System.Net;
-
+using System.Net.NetworkInformation;
 namespace FileDownloader
 {
-    class NetAdress : _Adress
+    public class NetAdress : _Adress
     {
+        private bool _Error404 = false;
+        public bool Error404 { get { return _Error404; } }
+        private string _filename;
+        public string FileName{ get { return _filename; } }
         /// 
         /// Checks if adress is in accordance to URL regex.
         /// 
-        protected override bool IsAdressValid(string uriName)
+        public override bool IsAdressValid(string uriName)
         {
             Uri uriResult;
-            return Uri.TryCreate(uriName, UriKind.Absolute, out uriResult)
+            
+            bool b = Uri.TryCreate(uriName, UriKind.Absolute, out uriResult)
             && (uriResult.Scheme == Uri.UriSchemeHttp || uriResult.Scheme == Uri.UriSchemeHttps);
+            
+            _filename = System.IO.Path.GetFileName(uriName);
+
+            return b;
         }
 
         /// 
@@ -21,8 +30,6 @@ namespace FileDownloader
         public bool IsInNetwork(int Timeout = 1500)
         {
             if (!IsValid) return false;
-
-
             HttpWebRequest request = (HttpWebRequest)WebRequest.Create(Adress);
             request.Timeout = Timeout;
             request.Method = "HEAD";
@@ -30,11 +37,16 @@ namespace FileDownloader
             {
                 using (HttpWebResponse response = (HttpWebResponse)request.GetResponse())
                 {
-                    return response.StatusCode == HttpStatusCode.OK;
+                    if ((response).StatusCode == HttpStatusCode.MethodNotAllowed)
+                        Console.WriteLine("not allowed");
+
+                        return response.StatusCode == HttpStatusCode.OK;
                 }
             }
-            catch (WebException)
+            catch (WebException e)
             {
+                if (e.Message == "The remote server returned an error: (404) Not Found.")
+                    _Error404 = true;
                 return false;
             }
         }

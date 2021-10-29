@@ -1,49 +1,45 @@
 ﻿using System;
 using System.ComponentModel;
-using System.Net;
+using System.Diagnostics;
+using System.IO;
+using System.Net.Http;
+using System.Threading.Tasks;
+
 namespace FileDownloader
 {
-    class FileDownloader //: IDisposable
+    public class FileDownloader
     {
-        private volatile bool _completed;
-
-        public void DownloadFile(string address, string location)
+        private HttpClient client;
+        private Stream fStream;
+        public FileDownloader() {
+           client = new ();
+            
+        }
+        public FileDownloader(HttpClient webClient, FileStream bodyFile)
         {
-            WebClient client = new WebClient();
-            Uri Uri = new Uri(address);
-            _completed = false;
-
-            client.DownloadFileCompleted += new AsyncCompletedEventHandler(Completed);
-
-            client.DownloadProgressChanged += new DownloadProgressChangedEventHandler(DownloadProgress);
-            client.DownloadFileAsync(Uri, location);
-
+            client = webClient;
+            fStream = bodyFile;
         }
 
-        public bool DownloadCompleted { get { return _completed; } }
 
-        private void DownloadProgress(object sender, DownloadProgressChangedEventArgs e)
+        public async Task DownloadFile(string address, string location)
         {
-            // Displays the operation identifier, and the transfer progress.
-            Console.WriteLine("{0}    downloaded {1} of {2} bytes. {3} % complete...",
-                (string)e.UserState,
-                e.BytesReceived,
-                e.TotalBytesToReceive,
-                e.ProgressPercentage);
-        }
 
-        private void Completed(object sender, AsyncCompletedEventArgs e)
-        {
-            if (e.Cancelled == true)
+            //send  request asynchronously
+            HttpResponseMessage response = await client.GetAsync(address);
+
+            // Check that response was successful or throw exception
+            response.EnsureSuccessStatusCode();
+
+           
+
+            using (FileStream fileStream = new FileStream(location, FileMode.Create, FileAccess.Write, FileShare.None))
             {
-                Console.WriteLine("Download has been canceled.");
+                //copy the content from response to filestream
+                await response.Content.CopyToAsync(fileStream);
             }
-            else
-            {
-                Console.WriteLine("Download completed!");
-            }
-
-            _completed = true;
         }
+
+        
     }
 }
